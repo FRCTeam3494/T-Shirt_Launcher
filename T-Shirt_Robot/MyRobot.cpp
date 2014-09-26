@@ -13,7 +13,6 @@ class RobotDemo : public SimpleRobot
 	Relay* relay;
 	Joystick* GamePad;
 	
-	DoubleSolenoid* DSol;
 	Relay* Spike2;
 	AnalogChannel* Pressure;
 	int IntPressure;
@@ -28,7 +27,6 @@ public:
 		GamePad = new Joystick(1);
 		
 		relay = new Relay(5);
-		DSol = new DoubleSolenoid(1,3);
 		Spike2 = new Relay(1);
 		Pressure = new AnalogChannel(2);
 
@@ -68,18 +66,29 @@ public:
 	void OperatorControl()
 	{
 		
+		int timer  = 0;
 		myRobot->SetSafetyEnabled(true);
 		while (IsOperatorControl())
 		{
 			IntPressure = Pressure->GetValue();
 			voltPressure = Pressure->GetVoltage();
-			myRobot->TankDrive(GamePad->GetRawAxis(2),GamePad->GetRawAxis(4)); // drive with tank style (use right stick)
+			
+			timer++;
+			if (timer == 100){
+				printf("%f", voltPressure);
+				printf("\n");
+				printf("%d", IntPressure);
+				printf("\n");
+				timer = 0;
+			}
+		
+			myRobot->TankDrive(GamePad->GetRawAxis
+					(4),GamePad->GetRawAxis(2)); // drive with tank style (use right stick)
 			Wait(0.005);				// wait for a motor update time
 			//Gets air compressor
 			if(GamePad->GetRawButton(8) == true)
 			{
 				relay->Set(relay->kForward);
-				
 			}
 			else
 			{
@@ -95,21 +104,6 @@ public:
 				Spike2->Set(Spike2->kOff);
 			}
 			
-			if(GamePad->GetRawButton(2) == true)
-			{
-				
-				DSol->Set(DSol->kForward);
-			}
-			else if (GamePad->GetRawButton(3)== true)
-			{
-				
-				DSol->Set(DSol->kReverse);
-			}
-			else
-			{
-				DSol->Set(DSol->kOff);
-				
-			}
 			if (GamePad->GetRawButton(4) == true)
 			{
 					relay->Set(relay->kForward);
