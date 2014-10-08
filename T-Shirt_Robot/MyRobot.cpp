@@ -23,6 +23,10 @@ class RobotDemo: public SimpleRobot {
 	float voltPressure;
 	float RightArmX;
 	float RightArmY;
+	float RightArmZ;
+	float LeftArmX;
+	float LeftArmY;
+	float LeftArmZ;
 	float motorRotation;
 
 public:
@@ -35,7 +39,7 @@ public:
 		//Spike that controls pressure compressors
 		compressorSpike1 = new Relay(5);
 		compressorSpike2 = new Relay(4);
-		
+
 		//Spike that controls firing
 		fireSpike = new Relay(1);
 		PressureSensor = new AnalogChannel(2);
@@ -80,69 +84,69 @@ public:
 		int checkTimer = 0;
 		myRobot->SetSafetyEnabled(true);
 		//Pressures to flag at
-		int checkPressures[] = {10,20,30,40,50,60}; 
+		int checkPressures[] = { 10, 20, 30, 40, 50, 60 };
 		int length = 6;
-		bool flagged[] = {false, false, false, false, false, false};
+		bool flagged[] = { false, false, false, false, false, false };
 		while (IsOperatorControl()) {
-			RightArmX = Rarm->GetX(Rarm->kRightHand);
-			RightArmY = Rarm->GetY(Rarm->kRightHand);
+			if (GamePad->GetRawButton(1) == true && checkTimer >= 100) {
 
-			/**
-			 if(RightArmX != 0){
-			 printf("%s%f", "Right Arm X: ", RightArmX);
-			 printf("\n");
-			 }
-			 
-			 if(RightArmY != 0){
-			 printf("%s%f", "Right Arm Y: ", RightArmY);
-			 printf("\n");
-			 }
-			 **/
+				RightArmX = Rarm->GetX(Rarm->kRightHand);
+				RightArmY = Rarm->GetY(Rarm->kRightHand);
+				RightArmZ = Rarm->GetZ();
+
+				LeftArmX = Rarm->GetX(Larm->kLeftHand);
+				LeftArmY = Rarm->GetY(Larm->kLeftHand);
+				LeftArmZ = Rarm->GetZ();
+
+				printf("%s%f, %f, %f\n", "Right Arm: ", RightArmX, RightArmY,
+						RightArmZ);
+				printf("%s%f, %f, %f\n\n", "Left Arm: ", LeftArmX, LeftArmY,
+						LeftArmZ);
+			}
 
 			myRobot->TankDrive(GamePad->GetRawAxis(4), GamePad->GetRawAxis(2));
 			//drive with tank style (use right stick)
 
-			/**KINECT**
-			 myRobot->TankDrive(Rarm,Larm);
-			 
-			 **/
-			
-			if (checkTimer >= 100){
-				for (int i=0; i<length; i++){
-					if (getPressure() == checkPressures[i] && !flagged[i]){
+
+			//myRobot->TankDrive(Rarm,Larm);
+
+
+			if (checkTimer >= 100 && getPressure() != 0) {
+				for (int i = 0; i < length; i++) {
+					if (getPressure() == checkPressures[i] && !flagged[i]) {
 						printf("FLAG: Pressure at %i! PSI\n", checkPressures[i]);
 						checkTimer = 0;
 						flagged[i] = true;
-						if (i != 0){
-							flagged[i-1] = false;
+						if (i != 0) {
+							flagged[i - 1] = false;
 						}
 					}
 				}
 			}
 			checkTimer++;
-			
+
 			Wait(0.005); // wait for a motor update time
-			
+
 			/**
-			//Gets air compressor
-			if (GamePad->GetRawButton(?) == true) {
-				relay->Set(relay->kForward);
-			} else {
-				relay->Set(relay->kOff);
-			}
-			**/
+			 //Gets air compressor
+			 if (GamePad->GetRawButton(?) == true) {
+			 relay->Set(relay->kForward);
+			 } else {
+			 relay->Set(relay->kOff);
+			 }
+			 **/
 
 			//Only fires if there is more than 20PSI in the tank.
 			if (GamePad->GetRawButton(8) == true) {
-				if (getPressure()>=20){
+				if (getPressure() >= 20) {
 					//FIRE!
-					if(!printed){
+					if (!printed) {
 						printf("%s", "FIRE!\n");
 						printed = true;
 					}
 					fireSpike->Set(fireSpike->kForward);
 				} else {
-					if(!printed){
+					if (!printed) {
 						printf("%s", "Not enough pressure.\n");
 						printed = true;
 					}
@@ -160,7 +164,7 @@ public:
 				compressorSpike1->Set(compressorSpike1->kOff);
 				compressorSpike2->Set(compressorSpike2->kOff);
 			}
-			
+
 			if (GamePad->GetRawButton(6) == true) {
 				motorRotation += 0.01f;
 				jaguar->Set(motorRotation);
@@ -185,7 +189,10 @@ public:
 	int getPressure() {
 		intPressure = PressureSensor->GetValue();
 		voltPressure = PressureSensor->GetVoltage();
-		int pressure = int((0.1706*intPressure-14.984+33.058*voltPressure-15.406)/2);
+		int pressure =
+				int(
+						(0.1706 * intPressure - 14.984 + 33.058 * voltPressure
+								- 15.406) / 2);
 		if (pressure == 1 || pressure < 0) {
 			pressure = 0;
 		}
